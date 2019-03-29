@@ -1,0 +1,12 @@
+[package]
+name = "rust2"
+version = "0.1.0"
+authors = ["Willem Pelser <iiconfuzedstuff@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+
+
+[[bin]]
+name = "step0_repl"
+path = "step0_repl.rs"
