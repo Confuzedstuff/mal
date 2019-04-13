@@ -95,6 +95,8 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
                     to_ast_quote(reader)
                 } else if *c == '@' {
                     to_ast_deref(reader)
+                } else if *c == '^' {
+                    to_ast_metadata(reader)
                 } else {
                     to_ast_elem(&reader)
                 }
@@ -242,15 +244,28 @@ fn to_ast_quote(reader: &mut Reader) -> Option<MalSimpleAST>
 }
 
 fn to_ast_deref(reader: &mut Reader) -> Option<MalSimpleAST> {
-    if let Some(token) = reader.next(){
-        match token{
-            MalToken::NonSpecial(x)=>{
+    if let Some(token) = reader.next() {
+        match token {
+            MalToken::NonSpecial(x) => {
                 Some(MalSimpleAST::Atom(MalType::Deref(x.to_string())))
-
             }
-            _ => {None}
+            _ => { None }
         }
-    }else{
+    } else {
         Some(MalSimpleAST::Atom(MalType::IncompleteDeref))
+    }
+}
+
+fn to_ast_metadata(reader: &mut Reader) -> Option<MalSimpleAST> {
+    if let Some(token) = reader.next() {
+        let mut v: Vec<MalSimpleAST> = Vec::new();
+        v.push(MalSimpleAST::Atom(MalType::Meta));
+        let ast = start_to_ast(reader);
+        if let Some(ast) = ast {
+            v.push(ast);
+        }
+        Some(MalSimpleAST::List(Box::new(v)))
+    } else {
+        None
     }
 }

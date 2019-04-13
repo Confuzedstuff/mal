@@ -28,5 +28,6 @@ pub enum MalType{
     QuasiQuote,
     UnQuote,
     SpliceUnQuote,
-    TEMPNOTHING(String)
+    TEMPNOTHING(String),
+    Meta
 }

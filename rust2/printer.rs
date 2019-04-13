@@ -82,5 +82,8 @@ fn print_atom(atom: &MalType) {
         MalType::IncompleteDeref => {
             print!("incomplete deref")
         }
+        MalType::Meta => {
+            print!("with-meta")
+        }
     }
 }
