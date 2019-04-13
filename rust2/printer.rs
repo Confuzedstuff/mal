@@ -58,8 +58,8 @@ fn print_atom(atom: &MalType) {
         MalType::UnbalancedListEnd => {
             print!("unbalanced list")
         }
-        MalType::Deref(_) => {
-            print!("deref ")
+        MalType::Deref(x) => {
+            print!("(deref {})", x) //TODO list hack
         }
         MalType::Quote => {
             print!("quote")
@@ -78,6 +78,9 @@ fn print_atom(atom: &MalType) {
         }
         MalType::TEMPNOTHING(x) => {
             print!("nothing {}", x)
+        }
+        MalType::IncompleteDeref => {
+            print!("incomplete deref")
         }
     }
 }

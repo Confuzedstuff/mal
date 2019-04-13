@@ -19,6 +19,7 @@ pub enum MalToken {
 pub enum MalType{
     Comment(String),
     Deref(String),
+    IncompleteDeref,
     Something(String),
     UnbalancedString(String),
     StringLiteral(String),

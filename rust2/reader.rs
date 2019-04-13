@@ -93,6 +93,8 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
                     to_ast_list(reader)
                 } else if *c == '\'' || *c == '`' || *c == '~' { //identify quote start
                     to_ast_quote(reader)
+                } else if *c == '@' {
+                    to_ast_deref(reader)
                 } else {
                     to_ast_elem(&reader)
                 }
@@ -210,7 +212,7 @@ fn to_ast_quote(reader: &mut Reader) -> Option<MalSimpleAST>
             MalToken::SpecialOne(c) => {
                 (*c).to_string()
             }
-            MalToken::SpecialTwo(s2) =>{
+            MalToken::SpecialTwo(s2) => {
                 s2.to_string()
             }
             _ => { panic!() }
@@ -224,7 +226,7 @@ fn to_ast_quote(reader: &mut Reader) -> Option<MalSimpleAST>
         v.push(MalSimpleAST::Atom(MalType::QuasiQuote));
     } else if quote == "~" {
         v.push(MalSimpleAST::Atom(MalType::UnQuote));
-    }else if quote == "~@"{
+    } else if quote == "~@" {
         v.push(MalSimpleAST::Atom(MalType::SpliceUnQuote));
     }
     if let Some(token) = reader.next() {
@@ -236,5 +238,19 @@ fn to_ast_quote(reader: &mut Reader) -> Option<MalSimpleAST>
         Some(MalSimpleAST::List(Box::new(v)))
     } else {
         None // todo incomplete quote
+    }
+}
+
+fn to_ast_deref(reader: &mut Reader) -> Option<MalSimpleAST> {
+    if let Some(token) = reader.next(){
+        match token{
+            MalToken::NonSpecial(x)=>{
+                Some(MalSimpleAST::Atom(MalType::Deref(x.to_string())))
+
+            }
+            _ => {None}
+        }
+    }else{
+        Some(MalSimpleAST::Atom(MalType::IncompleteDeref))
     }
 }
