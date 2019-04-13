@@ -17,6 +17,18 @@ pub fn pr_str(ast: &MalSimpleAST) {
             }
             print!(")");
         }
+        MalSimpleAST::Vector(vector) => {
+            print!("[");
+            let mut open = true;
+            for x in vector.iter() {
+                if !open {
+                    print!(" ");
+                }
+                open = false;
+                pr_str(x)
+            }
+            print!("]");
+        }
     }
 }
 

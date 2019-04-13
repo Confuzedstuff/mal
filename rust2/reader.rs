@@ -146,12 +146,18 @@ fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
 fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
 {
     let mut items: Vec<MalSimpleAST> = Vec::new();
+    let res:Option<MalSimpleAST>;
     loop {
         let token = reader.next();
         if let Some(token) = token {
             match token {
                 MalToken::SpecialOne(x) => {
-                    if (*x == ')') || (*x == ']') {
+                    if *x == ')' {
+                        res = Some(MalSimpleAST::MalList(Box::new(items)));
+                        break;
+                    }
+                    if *x == ']' {
+                        res = Some(MalSimpleAST::Vector(Box::new(items)));
                         break;
                     }
                     if (*x == '(') || (*x == '[') {
@@ -170,8 +176,9 @@ fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
             }
         } else {
             items.push(MalSimpleAST::MalAtom(MalType::UnbalancedListEnd));
+            res = Some(MalSimpleAST::MalList(Box::new(items)));
             break;
         }
     }
-    Some(MalSimpleAST::MalList(Box::new(items)))
+    res
 }

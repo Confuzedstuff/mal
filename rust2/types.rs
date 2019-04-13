@@ -2,6 +2,7 @@
 pub enum MalSimpleAST {
     MalAtom(MalType),
     MalList(Box<Vec<MalSimpleAST>>),
+    Vector(Box<Vec<MalSimpleAST>>)
 }
 
 #[derive(Debug)]
