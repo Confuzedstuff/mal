@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub enum MalSimpleAST {
-    MalAtom(MalType),
-    MalList(Box<Vec<MalSimpleAST>>),
+    Atom(MalType),
+    List(Box<Vec<MalSimpleAST>>),
     Vector(Box<Vec<MalSimpleAST>>),
     HashMap(Box<Vec<MalSimpleAST>>)
 }
@@ -19,11 +19,13 @@ pub enum MalToken {
 pub enum MalType{
     Comment(String),
     Deref(String),
-    String(String),
+    Something(String),
     UnbalancedString(String),
     StringLiteral(String),
     UnbalancedListEnd,
     Quote,
     QuasiQuote,
-    UnQuote
+    UnQuote,
+    SpliceUnQuote,
+    TEMPNOTHING(String)
 }

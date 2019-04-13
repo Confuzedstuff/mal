@@ -2,10 +2,10 @@ use crate::types::{MalToken, MalSimpleAST, MalType};
 
 pub fn pr_str(ast: &MalSimpleAST) {
     match ast {
-        MalSimpleAST::MalAtom(atom) => {
+        MalSimpleAST::Atom(atom) => {
             print_atom(atom)
         }
-        MalSimpleAST::MalList(list) => {
+        MalSimpleAST::List(list) => {
             print!("(");
             let mut open = true;
             for x in list.iter() {
@@ -46,7 +46,7 @@ pub fn pr_str(ast: &MalSimpleAST) {
 
 fn print_atom(atom: &MalType) {
     match atom {
-        MalType::String(s) => {
+        MalType::Something(s) => {
             print!("{}", s);
         }
         MalType::StringLiteral(sl) => {
@@ -72,6 +72,12 @@ fn print_atom(atom: &MalType) {
         }
         MalType::UnbalancedString(s) => {
             print!("unbalanced string")
+        }
+        MalType::SpliceUnQuote => {
+            print!("splice-unquote")
+        }
+        MalType::TEMPNOTHING(x) => {
+            print!("nothing {}", x)
         }
     }
 }
