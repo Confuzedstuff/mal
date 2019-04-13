@@ -85,25 +85,24 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
     if let Some(token) = reader.next() {
         match token {
             MalToken::SpecialOne(c) => {
-                if *c == '(' || *c == '[' {
+                if *c == '(' || *c == '[' || *c == '{' {
                     to_ast_list(reader)
                 } else if *c == '\'' || *c == '`' || *c == '~' {
-                    let mut  v: Vec<MalSimpleAST> = Vec::new();
+                    let mut v: Vec<MalSimpleAST> = Vec::new();
                     if *c == '\'' {
                         v.push(MalSimpleAST::MalAtom(MalType::Quote));
-                    }else if *c == '`'{
+                    } else if *c == '`' {
                         v.push(MalSimpleAST::MalAtom(MalType::QuasiQuote));
-                    }else if *c == '~'{
+                    } else if *c == '~' {
                         v.push(MalSimpleAST::MalAtom(MalType::UnQuote));
                     }
-                    if let Some(ast) = start_to_ast(reader){
+                    if let Some(ast) = start_to_ast(reader) {
                         v.push(ast);
-                    }else{
+                    } else {
                         v.push(MalSimpleAST::MalAtom(MalType::UnbalancedListEnd));
                     }
                     Some(MalSimpleAST::MalList(Box::new(v)))
-                }
-                else {
+                } else {
                     to_ast_elem(&reader)
                 }
             }
@@ -134,8 +133,14 @@ fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
                 Some(MalSimpleAST::MalAtom(MalType::Comment(c)))
             }
             MalToken::NonSpecial(x) => {
-                let s = String::from(x.trim());
-                Some(MalSimpleAST::MalAtom(MalType::String(s)))
+                let t = x.trim();
+                let s = String::from(t);
+
+                if open_equals_close(&t) {
+                    Some(MalSimpleAST::MalAtom(MalType::String(s)))
+                } else {
+                    Some(MalSimpleAST::MalAtom(MalType::UnbalancedString(s)))
+                }
             }
         }
     } else {
@@ -143,10 +148,28 @@ fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
     }
 }
 
+fn open_equals_close(s: &str) -> bool {
+    if s.len() > 0 {
+        let first = s.chars().next().unwrap();
+        if first != '"'
+            && first != '\''
+        {
+            return true // todo move to separate fn
+        }
+        let last = s.chars().rev().next().unwrap();
+        first == last
+    }
+    else
+    {
+        true
+    }
+
+}
+
 fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
 {
     let mut items: Vec<MalSimpleAST> = Vec::new();
-    let res:Option<MalSimpleAST>;
+    let res: Option<MalSimpleAST>;
     loop {
         let token = reader.next();
         if let Some(token) = token {
@@ -160,7 +183,13 @@ fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
                         res = Some(MalSimpleAST::Vector(Box::new(items)));
                         break;
                     }
-                    if (*x == '(') || (*x == '[') {
+                    if *x == '}' {
+                        res = Some(MalSimpleAST::HashMap(Box::new(items)));
+                        break;
+                    }
+                    if (*x == '(')
+                        || (*x == '[')
+                        || (*x == '{') {
                         let list = to_ast_list(reader);
                         if let Some(list) = list {
                             items.push(list);

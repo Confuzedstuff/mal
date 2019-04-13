@@ -29,6 +29,18 @@ pub fn pr_str(ast: &MalSimpleAST) {
             }
             print!("]");
         }
+        MalSimpleAST::HashMap(hashmap) => {
+            print!("{{");
+            let mut open = true;
+            for x in hashmap.iter() {
+                if !open {
+                    print!(" ");
+                }
+                open = false;
+                pr_str(x)
+            }
+            print!("}}");
+        }
     }
 }
 
@@ -54,10 +66,12 @@ fn print_atom(atom: &MalType) {
         }
         MalType::QuasiQuote => {
             print!("quasiquote")
-
         }
         MalType::UnQuote => {
             print!("unquote")
+        }
+        MalType::UnbalancedString(s) => {
+            print!("unbalanced string")
         }
     }
 }

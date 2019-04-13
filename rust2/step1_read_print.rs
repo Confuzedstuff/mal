@@ -43,7 +43,9 @@ fn eval(input: &Option<MalSimpleAST>) -> &Option<MalSimpleAST> {
 
 fn print(ast: &Option<MalSimpleAST>) {
     match ast {
-        None => {}
+        None => {
+            print!("nope")
+        }
         Some(s) => {
             pr_str(&s);
         }
