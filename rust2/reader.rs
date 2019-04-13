@@ -24,7 +24,7 @@ pub fn tokenize(input: &str) -> Vec<MalToken> {
 //        }
 
         if let Some(specialone) = cap.name("specialone") {
-            println!("specialone {}", specialone.as_str());
+            //println!("specialone {}", specialone.as_str());
             tokens.push(MalToken::SpecialOne(specialone.as_str().chars().next().unwrap()));
             continue;
         }
@@ -55,10 +55,10 @@ pub struct Reader {
     pos: usize,
 }
 
-pub fn create_reader(tokens: Vec<MalToken>, pos: usize) -> Reader{
-    Reader{
+pub fn create_reader(tokens: Vec<MalToken>, pos: usize) -> Reader {
+    Reader {
         tokens,
-        pos
+        pos,
     }
 }
 
@@ -71,7 +71,7 @@ fn peek(tokens: &Vec<MalToken>, pos: usize) -> Option<&MalToken>
     }
 }
 
- impl Reader {
+impl Reader {
     fn next(&mut self) -> Option<&MalToken>
     {
         let token = peek(&self.tokens, self.pos);
@@ -100,33 +100,57 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
     }
 }
 
-fn to_ast_elem(token: &MalToken) -> Option<MalSimpleAST>{
+fn to_ast_elem(token: &MalToken) -> Option<MalSimpleAST> {
     match token {
         MalToken::SpecialTwo(_) => {
             None
-        },
+        }
         MalToken::SpecialOne(_) => {
             None
-
-        },
+        }
         MalToken::StringLiteral(_) => {
             None
-
-        },
+        }
         MalToken::Comment(_) => {
             None
-
-        },
+        }
         MalToken::NonSpecial(x) => {
             let s = String::from(x.trim());
 //            println!("ATOM {}",s);
             Some(MalSimpleAST::MalAtom(MalType::String(s)))
-        },
+        }
     }
 }
 
 
 fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
 {
-    None
+    let mut items: Vec<MalSimpleAST> = Vec::new();
+    loop {
+        let token = reader.next();
+        if let Some(token) = token {
+            match token{
+                MalToken::SpecialOne(x) => {
+                    if *x == ')'{
+                        break;
+                    }
+                    if *x == '('{
+                        let list = to_ast_list(reader);
+                        if let Some(list) = list{
+                            items.push(list);
+                        }
+                    }
+                },
+                _ => {
+                    let r = to_ast_elem(token);
+                    if let Some(r) =r{
+                        items.push(r);
+                    }
+                },
+            }
+        } else {
+            break;
+        }
+    }
+    Some(MalSimpleAST::MalList(Box::new(items)))
 }

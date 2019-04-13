@@ -1,20 +1,29 @@
 use crate::types::{MalToken, MalSimpleAST, MalType};
 
-pub fn pr_str(ast: &Option<MalSimpleAST>){
-    if let Some(ast) = ast{
-        match ast {
-            MalSimpleAST::MalAtom(atom) => {
-                match atom {
-                    MalType::String(s) => {
-                        print!("{}", s);
-                    },
+pub fn pr_str(ast: &MalSimpleAST) {
+    match ast {
+        MalSimpleAST::MalAtom(atom) => {
+            print_atom(atom)
+        }
+        MalSimpleAST::MalList(list) => {
+            print!("(");
+            let mut open = true;
+            for x in list.iter() {
+                if !open {
+                    print!(" ");
                 }
-            },
-            MalSimpleAST::MalList(_) => {
-                print!("nothing");
-            },
+                open = false;
+                pr_str(x)
+            }
+            print!(")");
         }
     }
-    println!("");
+}
 
+fn print_atom(atom: &MalType) {
+    match atom {
+        MalType::String(s) => {
+            print!("{}", s);
+        }
+    }
 }

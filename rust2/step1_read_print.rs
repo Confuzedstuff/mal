@@ -32,7 +32,17 @@ fn read() -> (String, usize) {
     let tokens = tokenize(&input);
     let mut reader  =  create_reader(tokens,0);
     let ast = start_to_ast(&mut reader);
-    pr_str(&ast);
+    match ast {
+        None => {
+
+        },
+        Some(s) => {
+            pr_str(&s);
+
+        },
+    }
+    println!();
+
     (input, n_bytes)
 }
 
