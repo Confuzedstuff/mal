@@ -25,5 +25,27 @@ fn print_atom(atom: &MalType) {
         MalType::String(s) => {
             print!("{}", s);
         }
+        MalType::StringLiteral(sl) => {
+            print!("{}", sl)
+        }
+        MalType::Comment(comment) => {
+            //ignore comments
+        }
+        MalType::UnbalancedListEnd => {
+            print!("unbalanced list")
+        }
+        MalType::Deref(_) => {
+            print!("deref ")
+        }
+        MalType::Quote => {
+            print!("quote")
+        }
+        MalType::QuasiQuote => {
+            print!("quasiquote")
+
+        }
+        MalType::UnQuote => {
+            print!("unquote")
+        }
     }
 }

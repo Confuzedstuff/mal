@@ -24,25 +24,21 @@ pub fn tokenize(input: &str) -> Vec<MalToken> {
 //        }
 
         if let Some(specialone) = cap.name("specialone") {
-            //println!("specialone {}", specialone.as_str());
             tokens.push(MalToken::SpecialOne(specialone.as_str().chars().next().unwrap()));
             continue;
         }
 
         if let Some(stringliteral) = cap.name("stringliteral") {
-            //println!("stringliteral {}", stringliteral.as_str());
             tokens.push(MalToken::StringLiteral(String::from(stringliteral.as_str())));
             continue;
         }
 
         if let Some(comment) = cap.name("comment") {
-            //println!("comment {}", comment.as_str());
             tokens.push(MalToken::Comment(String::from(comment.as_str())));
             continue;
         }
 
         if let Some(nonspecial) = cap.name("nonspecial") {
-            //println!("nonspecial {}", nonspecial.as_str());
             tokens.push(MalToken::NonSpecial(String::from(nonspecial.as_str())));
             continue;
         }
@@ -74,14 +70,12 @@ fn peek(tokens: &Vec<MalToken>, pos: usize) -> Option<&MalToken>
 impl Reader {
     fn next(&mut self) -> Option<&MalToken>
     {
-        let token = peek(&self.tokens, self.pos);
-        if token.is_some() {
-            self.pos += 1;
-        }
+        self.pos += 1;
+        let token = peek(&self.tokens, self.pos - 1);
         token
     }
-    fn peeks(&self) -> Option<&MalToken> {
-        peek(&self.tokens, self.pos)
+    fn peek(&self) -> Option<&MalToken> {
+        peek(&self.tokens, self.pos - 1)
     }
 }
 
@@ -90,9 +84,31 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
 {
     if let Some(token) = reader.next() {
         match token {
-            MalToken::SpecialOne(c) => { to_ast_list(reader) }
+            MalToken::SpecialOne(c) => {
+                if *c == '(' || *c == '[' {
+                    to_ast_list(reader)
+                } else if *c == '\'' || *c == '`' || *c == '~' {
+                    let mut  v: Vec<MalSimpleAST> = Vec::new();
+                    if *c == '\'' {
+                        v.push(MalSimpleAST::MalAtom(MalType::Quote));
+                    }else if *c == '`'{
+                        v.push(MalSimpleAST::MalAtom(MalType::QuasiQuote));
+                    }else if *c == '~'{
+                        v.push(MalSimpleAST::MalAtom(MalType::UnQuote));
+                    }
+                    if let Some(ast) = start_to_ast(reader){
+                        v.push(ast);
+                    }else{
+                        v.push(MalSimpleAST::MalAtom(MalType::UnbalancedListEnd));
+                    }
+                    Some(MalSimpleAST::MalList(Box::new(v)))
+                }
+                else {
+                    to_ast_elem(&reader)
+                }
+            }
             a => {
-                to_ast_elem(a)
+                to_ast_elem(&reader)
             }
         }
     } else {
@@ -100,28 +116,32 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
     }
 }
 
-fn to_ast_elem(token: &MalToken) -> Option<MalSimpleAST> {
-    match token {
-        MalToken::SpecialTwo(_) => {
-            None
+fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
+    if let Some(token) = reader.peek() {
+        match token {
+            MalToken::SpecialTwo(_) => {
+                None
+            }
+            MalToken::SpecialOne(_) => {
+                None
+            }
+            MalToken::StringLiteral(x) => {
+                let s = String::from(x.trim());
+                Some(MalSimpleAST::MalAtom(MalType::StringLiteral(s)))
+            }
+            MalToken::Comment(comment) => {
+                let c = comment.clone();
+                Some(MalSimpleAST::MalAtom(MalType::Comment(c)))
+            }
+            MalToken::NonSpecial(x) => {
+                let s = String::from(x.trim());
+                Some(MalSimpleAST::MalAtom(MalType::String(s)))
+            }
         }
-        MalToken::SpecialOne(_) => {
-            None
-        }
-        MalToken::StringLiteral(_) => {
-            None
-        }
-        MalToken::Comment(_) => {
-            None
-        }
-        MalToken::NonSpecial(x) => {
-            let s = String::from(x.trim());
-//            println!("ATOM {}",s);
-            Some(MalSimpleAST::MalAtom(MalType::String(s)))
-        }
+    } else {
+        None
     }
 }
-
 
 fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
 {
@@ -129,26 +149,27 @@ fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
     loop {
         let token = reader.next();
         if let Some(token) = token {
-            match token{
+            match token {
                 MalToken::SpecialOne(x) => {
-                    if *x == ')'{
+                    if (*x == ')') || (*x == ']') {
                         break;
                     }
-                    if *x == '('{
+                    if (*x == '(') || (*x == '[') {
                         let list = to_ast_list(reader);
-                        if let Some(list) = list{
+                        if let Some(list) = list {
                             items.push(list);
                         }
                     }
-                },
+                }
                 _ => {
-                    let r = to_ast_elem(token);
-                    if let Some(r) =r{
+                    let r = to_ast_elem(reader);
+                    if let Some(r) = r {
                         items.push(r);
                     }
-                },
+                }
             }
         } else {
+            items.push(MalSimpleAST::MalAtom(MalType::UnbalancedListEnd));
             break;
         }
     }

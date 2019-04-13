@@ -15,5 +15,12 @@ pub enum MalToken {
 
 #[derive(Debug)]
 pub enum MalType{
-    String(String)
+    Comment(String),
+    Deref(String),
+    String(String),
+    StringLiteral(String),
+    UnbalancedListEnd,
+    Quote,
+    QuasiQuote,
+    UnQuote
 }
