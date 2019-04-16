@@ -89,13 +89,14 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
     if let Some(token) = reader.peek() {
         match token {
             MalToken::SpecialOne(c) => {
-                if *c == '(' || *c == '[' || *c == '{' { //identify list start
+                let c = *c;
+                if c == '(' || c == '[' || c == '{' { //identify list start
                     to_ast_list(reader)
-                } else if *c == '\'' || *c == '`' || *c == '~' { //identify quote start
+                } else if c == '\'' || c == '`' || c == '~' { //identify quote start
                     to_ast_quote(reader)
-                } else if *c == '@' {
+                } else if c == '@' {
                     to_ast_deref(reader)
-                } else if *c == '^' {
+                } else if c == '^' {
                     to_ast_metadata(reader)
                 } else {
                     to_ast_elem(&reader)
@@ -139,7 +140,12 @@ fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
                 let t = x.trim();
                 let s = String::from(t);
 
-                Some(MalSimpleAST::Atom(MalType::Something(s)))
+                if s == "+"{
+                    Some(MalSimpleAST::Atom(MalType::Something(s)))
+                }else{
+                    let i = s.parse::<isize>().unwrap();
+                    Some(MalSimpleAST::Atom(MalType::Integer(i)))
+                }
             }
         }
     } else {

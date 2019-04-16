@@ -29,5 +29,6 @@ pub enum MalType{
     UnQuote,
     SpliceUnQuote,
     TEMPNOTHING(String),
-    Meta
+    Meta,
+    Integer(isize)
 }

@@ -85,5 +85,8 @@ fn print_atom(atom: &MalType) {
         MalType::Meta => {
             print!("with-meta")
         }
+        MalType::Integer(i) => {
+            print!("{}", i)
+        }
     }
 }
