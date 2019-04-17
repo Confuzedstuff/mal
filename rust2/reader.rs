@@ -141,7 +141,7 @@ fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
                 let s = String::from(t);
 
                 if s == "+"{
-                    Some(MalSimpleAST::Atom(MalType::Something(s)))
+                    Some(MalSimpleAST::Atom(MalType::Symbol(s)))
                 }else{
                     let i = s.parse::<isize>().unwrap();
                     Some(MalSimpleAST::Atom(MalType::Integer(i)))

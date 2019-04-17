@@ -38,59 +38,73 @@ fn read() -> Option<MalSimpleAST> {
     ast
 }
 
-fn eval(input: &Option<MalSimpleAST>) -> Option<MalSimpleAST> {
+fn getSym(ast: &MalSimpleAST) -> String
+{
+    match ast {
+        MalSimpleAST::Atom(atom) => {
+            if let MalType::Symbol(sym) = atom {
+                sym.clone()
+            } else {
+                panic!("expected symbol")
+            }
+        }
+        _ => { panic!("expected atom") }
+    }
+}
+
+fn eval(input: Option<MalSimpleAST>) -> Option<MalSimpleAST> {
     let mut map = HashMap::new();
     let add = |args: Vec<MalType>| -> MalType {
+        //TODO find common base type
         let res = args.iter().fold(0isize, |sum, val| {
             if let MalType::Integer(i) = val {
-                let res = sum + i;
-                println!("sum {}", res);
-                res
+                sum + i
             } else {
                 panic!()
             }
         });
         MalType::Integer(res)
     };
-    map.insert("+", add);
+    map.insert("+".to_string(), add);
 
     let res: MalSimpleAST = match input {
         Some(ast) => {
             match ast {
                 MalSimpleAST::Atom(_) => { panic!("atom") }
                 MalSimpleAST::List(list) => {
-//                    if list.len() == 0 {
-//                        Some(ast)
-//                    } else {
-                    println!("len = {}", list.len());
-                    let func = list.get(0).unwrap();
-                    let args =
-                        list.iter()
-                            .enumerate()
-                            .filter(|&(i, _)| i != 0)
-                            .map(|(_, v)| {
-                                match v {
-                                    MalSimpleAST::Atom(atom) => {
-                                        if let MalType::Integer(i) = atom {
-                                            MalType::Integer(*i)
-                                        } else {
-                                            panic!()
+                    if list.len() == 0 {
+                        MalSimpleAST::List(list)
+                    } else {
+                        let a = list.get(0).unwrap();
+                        let sym = getSym(a);
+
+                        let args =
+                            list.iter()
+                                .enumerate()
+                                .filter(|&(i, _)| i != 0)
+                                .map(|(_, v)| {
+                                    match v {
+                                        MalSimpleAST::Atom(atom) => {
+                                            if let MalType::Integer(i) = atom {
+                                                MalType::Integer(*i)
+                                            } else {
+                                                panic!()
+                                            }
                                         }
+                                        _ => { panic!("not implemented") }
                                     }
-                                    _ => { panic!("not implemented") }
-                                }
-                            })
-                            .collect::<Vec<_>>();
-                    //apply
-                    let fun = *map.get("+").unwrap();
-                    let res = fun(args);
-                    MalSimpleAST::Atom(res)
-//                    }
+                                })
+                                .collect::<Vec<_>>();
+                        //apply
+                        let fun = *map.get(&sym).expect("Could not find control symbol");
+                        let res = fun(args);
+                        MalSimpleAST::Atom(res)
+                    }
                 }
                 _ => { panic!("not implemented") }
             }
         }
-        _ => {
+        None => {
             panic!();
         }
     };
@@ -121,7 +135,7 @@ fn rep() -> REPLState {
     if ast.is_none() {
         return REPLState::Stopping(StopReason::EOF);
     }
-    let result = eval(&ast);
+    let result = eval(ast);
     print(&result);
     REPLState::Running
 }

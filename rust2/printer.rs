@@ -88,5 +88,8 @@ fn print_atom(atom: &MalType) {
         MalType::Integer(i) => {
             print!("{}", i)
         }
+        MalType::Symbol(s) => {
+            print!("{}", s)
+        }
     }
 }
