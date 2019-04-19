@@ -1,4 +1,4 @@
-use crate::types::{MalToken, MalSimpleAST, MalType};
+use crate::types::*;
 
 pub fn pr_str(ast: &MalSimpleAST) {
     match ast {
@@ -88,7 +88,7 @@ fn print_atom(atom: &MalType) {
         MalType::Integer(i) => {
             print!("{}", i)
         }
-        MalType::Symbol(s) => {
+        MalType::Symbol(s, op) => {
             print!("{}", s)
         }
     }

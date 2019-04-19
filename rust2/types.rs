@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub enum MalSimpleAST {
     Atom(MalType),
@@ -31,5 +33,8 @@ pub enum MalType{
     TEMPNOTHING(String),
     Meta,
     Integer(isize),
-    Symbol(String)
+    Symbol(String,Option<EnvFunc>)
 }
+
+pub type EnvFunc = fn(Vec<MalType>)->MalType;
+pub type ReplEnv = HashMap<String, fn(Vec<MalType>)->MalType>;

@@ -2,7 +2,6 @@ extern crate regex;
 
 use regex::Regex;
 use crate::types::{MalToken, MalSimpleAST, MalType};
-use crate::read;
 
 lazy_static! {
     static ref RE: Regex = Regex::new(r#"(?x)
@@ -102,10 +101,10 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<MalSimpleAST>
                     to_ast_elem(&reader)
                 }
             }
-            MalToken::SpecialTwo(s2) => {
+            MalToken::SpecialTwo(_) => {
                 to_ast_quote(reader)
             }
-            a => {
+            _ => {
                 to_ast_elem(&reader)
             }
         }
@@ -140,9 +139,13 @@ fn to_ast_elem(reader: &Reader) -> Option<MalSimpleAST> {
                 let t = x.trim();
                 let s = String::from(t);
 
-                if s == "+"{
-                    Some(MalSimpleAST::Atom(MalType::Symbol(s)))
+                lazy_static! {
+                   static ref SYMBOLS: Regex = Regex::new(r"[+\-*/]").unwrap();
+                }
+                if SYMBOLS.is_match(&s){
+                    Some(MalSimpleAST::Atom(MalType::Symbol(s,None)))
                 }else{
+                    //this assumes only integers
                     let i = s.parse::<isize>().unwrap();
                     Some(MalSimpleAST::Atom(MalType::Integer(i)))
                 }
@@ -184,16 +187,17 @@ fn to_ast_list(reader: &mut Reader) -> Option<MalSimpleAST>
         let token = reader.next();
         if let Some(token) = token {
             match token {
-                MalToken::SpecialOne(x) => {
-                    if *x == ')' { // todo check close brace match
+                MalToken::SpecialOne(c) => {
+                    let c = *c;
+                    if c == ')' { // todo check close brace match
                         res = Some(MalSimpleAST::List(Box::new(items)));
                         break;
                     }
-                    if *x == ']' {
+                    if c == ']' {
                         res = Some(MalSimpleAST::Vector(Box::new(items)));
                         break;
                     }
-                    if *x == '}' {
+                    if c == '}' {
                         res = Some(MalSimpleAST::HashMap(Box::new(items)));
                         break;
                     }
