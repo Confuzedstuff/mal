@@ -1,11 +1,11 @@
 use crate::types::*;
 
-pub fn pr_str(ast: &MalSimpleAST) {
+pub fn pr_str(ast: &AST) {
     match ast {
-        MalSimpleAST::Atom(atom) => {
+        AST::Atom(atom) => {
             print_atom(atom)
         }
-        MalSimpleAST::List(list) => {
+        AST::List(list) => {
             print!("(");
             let mut open = true;
             for x in list.iter() {
@@ -17,7 +17,7 @@ pub fn pr_str(ast: &MalSimpleAST) {
             }
             print!(")");
         }
-        MalSimpleAST::Vector(vector) => {
+        AST::Vector(vector) => {
             print!("[");
             let mut open = true;
             for x in vector.iter() {
@@ -29,7 +29,7 @@ pub fn pr_str(ast: &MalSimpleAST) {
             }
             print!("]");
         }
-        MalSimpleAST::HashMap(hashmap) => {
+        AST::HashMap(hashmap) => {
             print!("{{");
             let mut open = true;
             for x in hashmap.iter() {

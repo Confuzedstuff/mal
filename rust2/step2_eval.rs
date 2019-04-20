@@ -32,7 +32,7 @@ fn main() {
     }
 }
 
-fn read() -> Option<MalSimpleAST> {
+fn read() -> Option<AST> {
     let mut input = String::new();
     io::stdin()
         .read_line(&mut input)
@@ -114,25 +114,29 @@ fn get_repl_env() -> ReplEnv {
     map
 }
 
-fn eval(ast: MalSimpleAST, repl_env: &mut ReplEnv) -> MalSimpleAST {
+fn eval(ast: AST, repl_env: &mut ReplEnv) -> ASTResult {
     match ast {
-        MalSimpleAST::Atom(_) => eval_ast(&ast, repl_env),
-        MalSimpleAST::List(ref list) if list.len() == 0 => {
-            ast
+        AST::Atom(_) => eval_ast(&ast, repl_env),
+        AST::List(ref list) if list.len() == 0 => {
+            Ok(ast)
         }
-        MalSimpleAST::List(_) => {
-            if let MalSimpleAST::List(list) = eval_ast(&ast, repl_env) {
-                apply(*list)
+        AST::List(_) => {
+            if let AST::List(list) = eval_ast(&ast, repl_env)? {
+                Ok(apply(*list))
             } else {
-                panic!("must return list")
+                Err(fail("must return list"))
             }
         }
-        _ => panic!("not implemented"),
+        _ => Err(fail("not implemented")),
     }
 }
 
-fn apply(list: Vec<MalSimpleAST>) -> MalSimpleAST {
-    if let MalSimpleAST::Atom(atom) = list.get(0).unwrap() {
+fn fail(s:&str) -> MalError {
+    MalError::Panic {description:s.to_string()}
+}
+
+fn apply(list: Vec<AST>) -> AST {
+    if let AST::Atom(atom) = list.get(0).unwrap() {
         if let MalType::Symbol(_, opt) = atom {
             let fun = opt.expect("fun");
             let args: Vec<_> =
@@ -140,35 +144,49 @@ fn apply(list: Vec<MalSimpleAST>) -> MalSimpleAST {
                     .enumerate()
                     .filter(|(i, _)| *i != 0)
                     .map(|(_, x)| match x {
-                        MalSimpleAST::Atom(atom) => {
+                        AST::Atom(atom) => {
                             atom.clone()
                         }
                         _ => panic!("invalid")
                     })
                     .collect();
 
-            MalSimpleAST::Atom(fun(args))
+            AST::Atom(fun(args))
         } else {
-            panic!("invalid")
+            AST::Atom(atom.clone())
         }
     } else {
         panic!("invalid")
     }
 }
 
-fn eval_ast(ast: &MalSimpleAST, repl_env: &mut ReplEnv) -> MalSimpleAST {
+fn eval_ast(ast: &AST, repl_env: &mut ReplEnv) ->  ASTResult {
     match ast {
-        MalSimpleAST::Atom(atom) => {
+        AST::Atom(atom) => {
             if let MalType::Symbol(sym, _) = atom {
-                let fun = *repl_env.get(sym).expect("Could not find control symbol");
-                MalSimpleAST::Atom(MalType::Symbol(sym.clone(), Some(fun)))
+                match repl_env.get(sym) {
+                    None => {
+                        Err(fail(&format!("Could not find control symbol {}",sym) ))
+                    },
+                    Some(fun) => {
+                        Ok(AST::Atom(MalType::Symbol(sym.clone(), Some(*fun))))
+                    },
+                }
             } else {
-                ast.clone()
+                Ok(ast.clone())
             }
         }
-        MalSimpleAST::List(list) => {
-            let res_list = list.iter().map(|x| eval(x.clone(), repl_env)).collect();
-            MalSimpleAST::List(Box::new(res_list))
+        AST::List(list) => {
+            let res_list :Vec<ASTResult> = list.iter().map(|x| eval(x.clone(), repl_env)).collect();
+            let errors: Vec<_> = res_list.iter().filter(|x| x.is_err()).collect();
+            if errors.len() == 0{
+                let oks: Vec<_> = res_list.iter().map(|x| x.clone().unwrap()).collect();
+                Ok(AST::List(Box::new(oks)))
+            }else{
+                let r = errors.first().unwrap().to_owned().to_owned();
+                r
+            }
+
         }
         _ => {
             panic!("todo")
@@ -176,7 +194,7 @@ fn eval_ast(ast: &MalSimpleAST, repl_env: &mut ReplEnv) -> MalSimpleAST {
     }
 }
 
-fn print(ast: &Option<MalSimpleAST>) {
+fn print(ast: &Option<AST>) {
     match ast {
         None => print!("nope"),
         Some(s) => {
@@ -187,8 +205,8 @@ fn print(ast: &Option<MalSimpleAST>) {
 }
 
 fn rep() -> REPLState {
-    println!("user> ");
-    //std::io::stdout().flush();
+    print!("user> ");
+    std::io::stdout().flush();
 
     let mut ast = match read() {
         Some(ast) => ast,
@@ -197,6 +215,14 @@ fn rep() -> REPLState {
         }
     };
     let ast = eval(ast, &mut get_repl_env());
-    print(&Some(ast));
+    match ast {
+        Ok(ok) => {
+            print(&Some(ok));
+        },
+        Err(err) => {
+            println!("{}", err);
+        },
+    }
+
     REPLState::Running
 }
