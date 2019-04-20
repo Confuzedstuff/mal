@@ -10,8 +10,8 @@ mal: stepA_mal
 	cp $< $@
 
 %: %.rs
-	cargo build --release --bin $*
-	cp target/release/$* $@
+	cargo build --bin $*
+	cp target/debug/$* $@
 
 STEP0_DEPS = readline.rs
 STEP1_DEPS = $(STEP0_DEPS) types.rs reader.rs printer.rs

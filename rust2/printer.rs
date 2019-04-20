@@ -52,7 +52,7 @@ fn print_atom(atom: &MalType) {
         MalType::StringLiteral(sl) => {
             print!("{}", sl)
         }
-        MalType::Comment(comment) => {
+        MalType::Comment(_) => {
             //ignore comments
         }
         MalType::UnbalancedListEnd => {
@@ -70,7 +70,7 @@ fn print_atom(atom: &MalType) {
         MalType::UnQuote => {
             print!("unquote")
         }
-        MalType::UnbalancedString(s) => {
+        MalType::UnbalancedString(_) => {
             print!("unbalanced string")
         }
         MalType::SpliceUnQuote => {
@@ -86,9 +86,9 @@ fn print_atom(atom: &MalType) {
             print!("with-meta")
         }
         MalType::Integer(i) => {
-            print!("{}", i)
+            print!("{}", *i)
         }
-        MalType::Symbol(s, op) => {
+        MalType::Symbol(s, _) => {
             print!("{}", s)
         }
     }

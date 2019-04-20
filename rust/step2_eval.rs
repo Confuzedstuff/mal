@@ -41,7 +41,9 @@ fn eval_ast(ast: &MalVal, env: &Env) -> MalRet {
     },
     List(v,_) => {
       let mut lst: MalArgs = vec![];
-      for a in v.iter() { lst.push(eval(a.clone(), env.clone())?) }
+      for a in v.iter() {
+        let mnb =a.clone();
+        lst.push(eval(a.clone(), env.clone())?) }
       Ok(list!(lst))
     },
     Vector(v,_) => {

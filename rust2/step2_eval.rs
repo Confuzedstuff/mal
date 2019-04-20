@@ -1,19 +1,21 @@
 #[macro_use]
 extern crate lazy_static;
 
-use std::io;
-use crate::reader::{tokenize, create_reader, start_to_ast};
 use crate::printer::pr_str;
+use crate::reader::{create_reader, start_to_ast, tokenize};
 use crate::types::*;
+use core::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
-use core::borrow::Borrow;
+use std::io;
+use std::convert::TryInto;
+use std::io::Write;
 
-mod types;
-mod reader;
 mod printer;
+mod reader;
+mod types;
 
 enum StopReason {
-    EOF
+    EOF,
 }
 
 enum REPLState {
@@ -32,25 +34,13 @@ fn main() {
 
 fn read() -> Option<MalSimpleAST> {
     let mut input = String::new();
-    io::stdin().read_line(&mut input).expect("Something went wrong while trying to read input");
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Something went wrong while trying to read input");
     let tokens = tokenize(&input);
     let mut reader = create_reader(tokens, 1);
     let ast = start_to_ast(&mut reader);
     ast
-}
-
-fn get_sym(ast: &MalSimpleAST) -> String
-{
-    match ast {
-        MalSimpleAST::Atom(atom) => {
-            if let MalType::Symbol(sym, None) = atom {
-                sym.clone()
-            } else {
-                panic!("expected symbol")
-            }
-        }
-        _ => { panic!("expected atom") }
-    }
 }
 
 fn add(args: Vec<MalType>) -> MalType {
@@ -71,101 +61,71 @@ fn get_repl_env() -> ReplEnv {
     map
 }
 
-fn eval(ast: MalSimpleAST, repl_env: &mut ReplEnv) -> Option<MalSimpleAST> {
-    let res: MalSimpleAST =
-        match &ast {
-            MalSimpleAST::Atom(_) => { panic!("atom") }
-            MalSimpleAST::List(list) => {
-                if list.len() == 0 {
-                    //MalSimpleAST::List(list)
-                    panic!();
-                } else {
-                    let newast = eval_ast(&ast, repl_env);
-                    if let MalSimpleAST::List(list) = &newast {
-                        println!("{:?}", newast);
-                        panic!()
-                    } else {
-                        println!("{:?}", newast);
-                        panic!("result must be a list ?")
-                    }
-                }
+fn eval(ast: MalSimpleAST, repl_env: &mut ReplEnv) -> MalSimpleAST {
+    match ast {
+        MalSimpleAST::Atom(_) => eval_ast(&ast, repl_env),
+        MalSimpleAST::List(ref list) if list.len() == 0 => {
+            ast
+        }
+        MalSimpleAST::List(_) => {
+            if let MalSimpleAST::List(list) = eval_ast(&ast, repl_env) {
+                apply(*list)
+            } else {
+                panic!("must return list")
             }
-            _ => { panic!("not implemented") }
-        };
-
-    Some(res)
+        }
+        _ => panic!("not implemented"),
+    }
 }
 
+fn apply(list: Vec<MalSimpleAST>) -> MalSimpleAST {
+    if let MalSimpleAST::Atom(atom) = list.get(0).unwrap() {
+        if let MalType::Symbol(_, opt) = atom {
+            let fun = opt.expect("fun");
+            let args:Vec<_> =
+                list.iter()
+                    .enumerate()
+                    .filter(|(i,_)| *i != 0)
+                    .map(|(_, x)| match x{
+                        MalSimpleAST::Atom(atom)=>{
+                            atom.clone()
+                        }
+                        _=> panic!("invalid")
+                    })
+                    .collect();
 
-//let first = list.get(0).unwrap();
-//
-//let args =
-//list.iter()
-//.enumerate()
-//.filter(|&(i, _)| i != 0)
-//.map(|(_, v)| {
-//match v {
-//MalSimpleAST::Atom(atom) => {
-////                                if let MalType::Integer(i) = atom {
-////                                    MalType::Integer(*i)
-////                                } else {
-////                                    panic!("non integer")
-////                                }
-//}
-//MalSimpleAST::List(list) => {
-//panic!()
-//}
-//
-//_ => { panic!("not implemented") }
-//}
-//})
-//.collect::<Vec<_>>();
-//
-//
-////apply
-////            let sym =get_sym(first);
-////            let fun = *repl_env.get(&sym).expect("Could not find control symbol");
-////            let res = fun(args);
-////            MalSimpleAST::Atom(res)
+            MalSimpleAST::Atom(fun(args))
+        } else {
+            panic!("invalid")
+        }
+    } else {
+        panic!("invalid")
+    }
+}
 
-fn eval_ast(ast: &MalSimpleAST, repl_env: &mut ReplEnv) -> MalSimpleAST
-{
-    let r:Option<MalSimpleAST> = match ast {
+fn eval_ast(ast: &MalSimpleAST, repl_env: &mut ReplEnv) -> MalSimpleAST {
+    match ast {
         MalSimpleAST::Atom(atom) => {
             if let MalType::Symbol(sym, _) = atom {
-                let sym = get_sym(&ast);
-                let fun = *repl_env.get(&sym).expect("Could not find control symbol");
-                Some( MalSimpleAST::Atom(MalType::Symbol(sym, Some(fun))))
+                let fun = *repl_env.get(sym).expect("Could not find control symbol");
+                MalSimpleAST::Atom(MalType::Symbol(sym.clone(), Some(fun)))
             } else {
-                None
+                ast.clone()
             }
         }
         MalSimpleAST::List(list) => {
-            let mut transformed_list = Vec::new();
-            for x in list.iter() {
-                let v = eval_ast(x, repl_env);
-                transformed_list.push(v);
-            }
-
-            Some(MalSimpleAST::List(Box::new(transformed_list)))
+            let res_list = list.iter().map(|x| eval(x.clone(), repl_env)).collect();
+            MalSimpleAST::List(Box::new(res_list))
         }
         _ => {
-            panic!()
+            panic!("todo")
         }
-    };
-
-    let rr = match r {
-        Some(s)=>{s}
-        None => ast
-    };
-    rr
+    }
 }
 
 fn print(ast: &Option<MalSimpleAST>) {
     match ast {
-        None => {
-            print!("nope")
-        }
+        None => print!("nope"),
         Some(s) => {
             pr_str(&s);
         }
@@ -175,13 +135,15 @@ fn print(ast: &Option<MalSimpleAST>) {
 
 fn rep() -> REPLState {
     println!("user> ");
-    let ast = match read() {
-        Some(ast) => { ast }
+    //std::io::stdout().flush();
+
+    let mut ast = match read() {
+        Some(ast) => ast,
         None => {
             return REPLState::Stopping(StopReason::EOF);
         }
     };
-    let result = eval(ast, &mut get_repl_env());
-    print(&result);
+    let ast = eval(ast, &mut get_repl_env());
+    print(&Some(ast));
     REPLState::Running
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MalSimpleAST {
     Atom(MalType),
     List(Box<Vec<MalSimpleAST>>),
@@ -17,7 +17,7 @@ pub enum MalToken {
     NonSpecial(String)
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum MalType{
     Comment(String),
     Deref(String),
