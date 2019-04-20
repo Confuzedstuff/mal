@@ -55,9 +55,62 @@ fn add(args: Vec<MalType>) -> MalType {
     MalType::Integer(res)
 }
 
+fn multiply(args: Vec<MalType>) -> MalType {
+    //TODO find common base type
+    if let MalType::Integer(first) =args.get(0).expect("At least one arg is required"){
+        let mut res = *first;
+        for x in args.iter().enumerate().filter(|(i,_)| *i != 0).map(|(_,x)|x) {
+            if let MalType::Integer(i) = x{
+                     res *= i;
+            }else{
+                panic!()
+            }
+        }
+        MalType::Integer(res)
+    }else{
+        panic!("not impl mult")
+    }
+}
+
+fn subtract(args: Vec<MalType>) -> MalType {
+    //TODO find common base type
+    let first = args.get(0).expect("Require 2 args");
+    let second = args.get(1).expect("Require 2 args");
+
+    if let MalType::Integer(i) = first {
+        if let MalType::Integer(j) = second {
+            MalType::Integer(i - j)
+        } else {
+            panic!("not implemented number type")
+        }
+    } else {
+        panic!("not implemented number type")
+    }
+}
+
+fn divide(args: Vec<MalType>) -> MalType {
+    //TODO find common base type
+    let first = args.get(0).expect("Require 2 args");
+    let second = args.get(1).expect("Require 2 args");
+
+    if let MalType::Integer(i) = first {
+        if let MalType::Integer(j) = second {
+            MalType::Integer(i / j)
+        } else {
+            panic!("not implemented number type")
+        }
+    } else {
+        panic!("not implemented number type")
+    }
+}
+
+
 fn get_repl_env() -> ReplEnv {
     let mut map: ReplEnv = HashMap::new();
     map.insert("+".to_string(), add);
+    map.insert("-".to_string(), subtract);
+    map.insert("*".to_string(), multiply);
+    map.insert("/".to_string(), divide);
     map
 }
 
@@ -82,15 +135,15 @@ fn apply(list: Vec<MalSimpleAST>) -> MalSimpleAST {
     if let MalSimpleAST::Atom(atom) = list.get(0).unwrap() {
         if let MalType::Symbol(_, opt) = atom {
             let fun = opt.expect("fun");
-            let args:Vec<_> =
+            let args: Vec<_> =
                 list.iter()
                     .enumerate()
-                    .filter(|(i,_)| *i != 0)
-                    .map(|(_, x)| match x{
-                        MalSimpleAST::Atom(atom)=>{
+                    .filter(|(i, _)| *i != 0)
+                    .map(|(_, x)| match x {
+                        MalSimpleAST::Atom(atom) => {
                             atom.clone()
                         }
-                        _=> panic!("invalid")
+                        _ => panic!("invalid")
                     })
                     .collect();
 
