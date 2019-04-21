@@ -1,7 +1,8 @@
-extern crate regex;
-
-use crate::types::{AST, MalToken, MalType};
 use regex::Regex;
+use crate::types::*;
+use crate::types::MalToken::*;
+use crate::types::AST::*;
+use crate::types::MalType::*;
 
 lazy_static! {
     static ref RE: Regex = Regex::new(
@@ -26,30 +27,30 @@ pub fn tokenize(input: &str) -> Vec<MalToken> {
         //        }
 
         if let Some(specialone) = cap.name("specialone") {
-            tokens.push(MalToken::SpecialOne(
+            tokens.push(SpecialOne(
                 specialone.as_str().chars().next().unwrap(),
             ));
             continue;
         }
         if let Some(specialtwo) = cap.name("specialtwo") {
-            tokens.push(MalToken::SpecialTwo(specialtwo.as_str().to_string()));
+            tokens.push(SpecialTwo(specialtwo.as_str().to_string()));
             continue;
         }
 
         if let Some(stringliteral) = cap.name("stringliteral") {
-            tokens.push(MalToken::StringLiteral(String::from(
+            tokens.push(StrLiteral(String::from(
                 stringliteral.as_str(),
             )));
             continue;
         }
 
         if let Some(comment) = cap.name("comment") {
-            tokens.push(MalToken::Comment(String::from(comment.as_str())));
+            tokens.push(CommentToken(String::from(comment.as_str())));
             continue;
         }
 
         if let Some(nonspecial) = cap.name("nonspecial") {
-            tokens.push(MalToken::NonSpecial(String::from(nonspecial.as_str())));
+            tokens.push(NonSpecial(String::from(nonspecial.as_str())));
             continue;
         }
     }
@@ -87,7 +88,7 @@ impl Reader {
 pub fn start_to_ast(reader: &mut Reader) -> Option<AST> {
     if let Some(token) = reader.peek() {
         match token {
-            MalToken::SpecialOne(c) => {
+            SpecialOne(c) => {
                 let c = *c;
                 if c == '(' || c == '[' || c == '{' {
                     //identify list start
@@ -103,7 +104,7 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<AST> {
                     to_ast_elem(&reader)
                 }
             }
-            MalToken::SpecialTwo(_) => to_ast_quote(reader),
+            SpecialTwo(_) => to_ast_quote(reader),
             _ => to_ast_elem(&reader),
         }
     } else {
@@ -114,26 +115,26 @@ pub fn start_to_ast(reader: &mut Reader) -> Option<AST> {
 fn to_ast_elem(reader: &Reader) -> Option<AST> {
     if let Some(token) = reader.peek() {
         match token {
-            MalToken::SpecialTwo(x) => {
-                Some(AST::Atom(MalType::TEMPNOTHING(x.to_string())))
+            SpecialTwo(x) => {
+                Some(Atom(TEMPNOTHING(x.to_string())))
             }
-            MalToken::SpecialOne(x) => {
-                Some(AST::Atom(MalType::TEMPNOTHING(x.to_string())))
+            SpecialOne(x) => {
+                Some(Atom(TEMPNOTHING(x.to_string())))
             }
-            MalToken::StringLiteral(x) => {
+            StrLiteral(x) => {
                 let s = String::from(x.trim());
 
                 if open_equals_close(&s) {
-                    Some(AST::Atom(MalType::StringLiteral(s)))
+                    Some(Atom(Str(s)))
                 } else {
-                    Some(AST::Atom(MalType::UnbalancedString(s)))
+                    Some(Atom(UnbalancedString(s)))
                 }
             }
-            MalToken::Comment(comment) => {
+            CommentToken(comment) => {
                 let c = comment.clone();
-                Some(AST::Atom(MalType::Comment(c)))
+                Some(Atom(Comment(c)))
             }
-            MalToken::NonSpecial(x) => {
+            NonSpecial(x) => {
                 let t = x.trim();
                 let s = String::from(t);
 
@@ -147,7 +148,7 @@ fn to_ast_elem(reader: &Reader) -> Option<AST> {
 
                 if SYMBOLS.is_match(&s) {
                     //print!("sym #{}# ", s);
-                    Some(AST::Atom(MalType::Symbol(s, None)))
+                    Some(Atom(Symbol(s, None)))
                 }else if s.len() == 0 {
                     None
                 } else {
@@ -156,13 +157,13 @@ fn to_ast_elem(reader: &Reader) -> Option<AST> {
                     //this assumes only integers
                     if NUMBERS.is_match(&s){
                         if let Ok(i) = s.parse::<isize>(){
-                            Some(AST::Atom(MalType::Integer(i)))
+                            Some(Atom(Integer(i)))
                         }else{
                             panic!("nan")
                         }
                     }
                     else{
-                        Some(AST::Atom(MalType::Something(s)))
+                        Some(Atom(Something(s)))
                     }
                 }
             }
@@ -189,26 +190,26 @@ fn to_ast_list(reader: &mut Reader) -> Option<AST> {
     let mut items: Vec<AST> = Vec::new();
     let res: Option<AST>;
     let open_brace = match reader.peek().unwrap() {
-        MalToken::SpecialOne(x) => *x,
+        SpecialOne(x) => *x,
         _ => panic!(),
     };
     loop {
         let token = reader.next();
         if let Some(token) = token {
             match token {
-                MalToken::SpecialOne(c) => {
+                SpecialOne(c) => {
                     let c = *c;
                     if c == ')' {
                         // todo check close brace match
-                        res = Some(AST::List(Box::new(items)));
+                        res = Some(List(Box::new(items)));
                         break;
                     }
                     if c == ']' {
-                        res = Some(AST::Vector(Box::new(items)));
+                        res = Some(Vector(Box::new(items)));
                         break;
                     }
                     if c == '}' {
-                        res = Some(AST::HashMap(Box::new(items)));
+                        res = Some(HashMap(Box::new(items)));
                         break;
                     }
                 }
@@ -219,8 +220,8 @@ fn to_ast_list(reader: &mut Reader) -> Option<AST> {
                 items.push(ast);
             }
         } else {
-            items.push(AST::Atom(MalType::UnbalancedListEnd));
-            res = Some(AST::List(Box::new(items)));
+            items.push(Atom(UnbalancedListEnd));
+            res = Some(List(Box::new(items)));
             break;
         }
     }
@@ -229,29 +230,29 @@ fn to_ast_list(reader: &mut Reader) -> Option<AST> {
 
 fn to_ast_quote(reader: &mut Reader) -> Option<AST> {
     let quote: String = match reader.peek().unwrap() {
-        MalToken::SpecialOne(c) => (*c).to_string(),
-        MalToken::SpecialTwo(s2) => s2.to_string(),
+        SpecialOne(c) => (*c).to_string(),
+        SpecialTwo(s2) => s2.to_string(),
         _ => panic!(),
     };
 
     let mut v: Vec<AST> = Vec::new();
 
     if quote == "'" {
-        v.push(AST::Atom(MalType::Quote));
+        v.push(Atom(Quote));
     } else if quote == "`" {
-        v.push(AST::Atom(MalType::QuasiQuote));
+        v.push(Atom(QuasiQuote));
     } else if quote == "~" {
-        v.push(AST::Atom(MalType::UnQuote));
+        v.push(Atom(UnQuote));
     } else if quote == "~@" {
-        v.push(AST::Atom(MalType::SpliceUnQuote));
+        v.push(Atom(SpliceUnQuote));
     }
     if let Some(token) = reader.next() {
         if let Some(ast) = start_to_ast(reader) {
             v.push(ast);
         } else {
-            v.push(AST::Atom(MalType::UnbalancedListEnd));
+            v.push(Atom(UnbalancedListEnd));
         }
-        Some(AST::List(Box::new(v)))
+        Some(List(Box::new(v)))
     } else {
         None // todo incomplete quote
     }
@@ -260,23 +261,23 @@ fn to_ast_quote(reader: &mut Reader) -> Option<AST> {
 fn to_ast_deref(reader: &mut Reader) -> Option<AST> {
     if let Some(token) = reader.next() {
         match token {
-            MalToken::NonSpecial(x) => Some(AST::Atom(MalType::Deref(x.to_string()))),
+            NonSpecial(x) => Some(Atom(Deref(x.to_string()))),
             _ => None,
         }
     } else {
-        Some(AST::Atom(MalType::IncompleteDeref))
+        Some(Atom(IncompleteDeref))
     }
 }
 
 fn to_ast_metadata(reader: &mut Reader) -> Option<AST> {
     if let Some(token) = reader.next() {
         let mut v: Vec<AST> = Vec::new();
-        v.push(AST::Atom(MalType::Meta));
+        v.push(Atom(Meta));
         let ast = start_to_ast(reader);
         if let Some(ast) = ast {
             v.push(ast);
         }
-        Some(AST::List(Box::new(v)))
+        Some(List(Box::new(v)))
     } else {
         None
     }

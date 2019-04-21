@@ -13,8 +13,8 @@ pub enum AST {
 pub enum MalToken {
     SpecialTwo(String),
     SpecialOne(char),
-    StringLiteral(String),
-    Comment(String),
+    StrLiteral(String),
+    CommentToken(String),
     NonSpecial(String)
 }
 
@@ -25,7 +25,7 @@ pub enum MalType{
     IncompleteDeref,
     Something(String),
     UnbalancedString(String),
-    StringLiteral(String),
+    Str(String),
     UnbalancedListEnd,
     Quote,
     QuasiQuote,

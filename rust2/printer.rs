@@ -1,11 +1,14 @@
 use crate::types::*;
+use crate::types::MalToken::*;
+use crate::types::AST::*;
+use crate::types::MalType::*;
 
 pub fn pr_str(ast: &AST) {
     match ast {
-        AST::Atom(atom) => {
+        Atom(atom) => {
             print_atom(atom)
         }
-        AST::List(list) => {
+        List(list) => {
             print!("(");
             let mut open = true;
             for x in list.iter() {
@@ -17,7 +20,7 @@ pub fn pr_str(ast: &AST) {
             }
             print!(")");
         }
-        AST::Vector(vector) => {
+        Vector(vector) => {
             print!("[");
             let mut open = true;
             for x in vector.iter() {
@@ -29,7 +32,7 @@ pub fn pr_str(ast: &AST) {
             }
             print!("]");
         }
-        AST::HashMap(hashmap) => {
+        HashMap(hashmap) => {
             print!("{{");
             let mut open = true;
             for x in hashmap.iter() {
@@ -46,49 +49,49 @@ pub fn pr_str(ast: &AST) {
 
 fn print_atom(atom: &MalType) {
     match atom {
-        MalType::Something(s) => {
+        Something(s) => {
             print!("{}", s);
         }
-        MalType::StringLiteral(sl) => {
+        Str(sl) => {
             print!("{}", sl)
         }
-        MalType::Comment(_) => {
+        Comment(_) => {
             //ignore comments
         }
-        MalType::UnbalancedListEnd => {
+        UnbalancedListEnd => {
             print!("unbalanced list")
         }
-        MalType::Deref(x) => {
+        Deref(x) => {
             print!("(deref {})", x) //TODO list hack
         }
-        MalType::Quote => {
+        Quote => {
             print!("quote")
         }
-        MalType::QuasiQuote => {
+        QuasiQuote => {
             print!("quasiquote")
         }
-        MalType::UnQuote => {
+        UnQuote => {
             print!("unquote")
         }
-        MalType::UnbalancedString(_) => {
+        UnbalancedString(_) => {
             print!("unbalanced string")
         }
-        MalType::SpliceUnQuote => {
+        SpliceUnQuote => {
             print!("splice-unquote")
         }
-        MalType::TEMPNOTHING(x) => {
+        TEMPNOTHING(x) => {
             print!("nothing {}", x)
         }
-        MalType::IncompleteDeref => {
+        IncompleteDeref => {
             print!("incomplete deref")
         }
-        MalType::Meta => {
+        Meta => {
             print!("with-meta")
         }
-        MalType::Integer(i) => {
+        Integer(i) => {
             print!("{}", *i)
         }
-        MalType::Symbol(s, _) => {
+        Symbol(s, _) => {
             print!("{}", s)
         }
     }
