@@ -94,5 +94,14 @@ fn print_atom(atom: &MalType) {
         Symbol(s, _) => {
             print!("{}", s)
         }
+        Def => {
+            print!("def")
+        }
+        Func(func) => {
+            print!("func {:?}", func)
+        }
+        x => {
+            print!("{:?}", x)
+        }
     }
 }

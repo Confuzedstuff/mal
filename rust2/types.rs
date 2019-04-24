@@ -6,7 +6,7 @@ pub enum AST {
     Atom(MalType),
     List(Box<Vec<AST>>),
     Vector(Box<Vec<AST>>),
-    HashMap(Box<Vec<AST>>)
+    HashMap(Box<Vec<AST>>),
 }
 
 #[derive(Debug)]
@@ -15,11 +15,11 @@ pub enum MalToken {
     SpecialOne(char),
     StrLiteral(String),
     CommentToken(String),
-    NonSpecial(String)
+    NonSpecial(String),
 }
 
-#[derive(Debug,Clone)]
-pub enum MalType{
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
+pub enum MalType {
     Comment(String),
     Deref(String),
     IncompleteDeref,
@@ -34,10 +34,13 @@ pub enum MalType{
     TEMPNOTHING(String),
     Meta,
     Integer(isize),
-    Symbol(String,Option<EnvFunc>)
+    Symbol(String, Option<EnvFunc>), //TODO remove func
+    Def,
+    Func(EnvFunc),
+    Variable(String),
 }
 
-#[derive(Debug, Fail,Clone)]
+#[derive(Debug, Fail, Clone)]
 pub enum MalError {
     #[fail(display = "fail: {}", description)]
     Panic {
@@ -50,7 +53,7 @@ pub enum MalError {
 //        MalError::Panic {description:"None".to_string()}
 //    }
 //}
-pub type ASTResult = Result<AST,MalError>;
+pub type ASTResult = Result<AST, MalError>;
 
-pub type EnvFunc = fn(Vec<MalType>)->MalType;
-pub type ReplEnv = HashMap<String, fn(Vec<MalType>)->MalType>;
+pub type EnvFunc = fn(Vec<MalType>) -> MalType;
+pub type ReplEnv = HashMap<MalType, MalType>;

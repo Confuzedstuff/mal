@@ -151,6 +151,10 @@ fn to_ast_elem(reader: &Reader) -> Option<AST> {
                     Some(Atom(Symbol(s, None)))
                 }else if s.len() == 0 {
                     None
+                }else if s == "def!"{
+                    Some(Atom(Def))
+                }else if s == "let*"{
+                    None
                 } else {
 
                     //print!("else #{}# ", s);
