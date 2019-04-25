@@ -177,7 +177,7 @@ fn apply(list: Vec<AST>, env: &mut Env) -> AST {
                             }
                             _ => { panic!("invalid") }
                         };
-                        println!("key {:?} value {:?}", key, atom.clone());
+                        //println!("key {:?} value {:?}", key, atom.clone());
                         env.set(key, atom.clone());
                         Atom(atom.clone())
                     }
@@ -213,7 +213,7 @@ fn eval_ast(ast: &AST, repl_env: &mut Env) -> ASTResult {
                             //Err(fail(&format!("Could not find {:?} in env", atom)))
                             Ok(ast.clone())
                         }
-                        Some(value) => {
+                        Some(value) => { // TODO remove branch --> atom clone
                             match value {
                                 Func(fun) => {
                                     let sym = match atom {
@@ -227,7 +227,7 @@ fn eval_ast(ast: &AST, repl_env: &mut Env) -> ASTResult {
                                     Ok(Atom(Symbol(sym.to_string(), Some(*fun))))
                                 }
                                 _ => {
-                                    Ok(Atom(value.clone()))
+                                    Ok(Atom(atom.clone()))
                                 }
                             }
                         }
@@ -252,13 +252,8 @@ fn eval_ast(ast: &AST, repl_env: &mut Env) -> ASTResult {
     }
 }
 
-fn print(ast: &Option<AST>) {
-    match ast {
-        None => print!("nope"),
-        Some(s) => {
-            pr_str(&s);
-        }
-    }
+fn print(ast: &AST, env: &Env) {
+    pr_str(ast, env);
     println!();
 }
 
@@ -275,14 +270,13 @@ fn rep(env: &mut Env) -> REPLState {
     let ast = eval(ast, env);
     match ast {
         Ok(ok) => {
-            print(&Some(ok));
+            print(&ok, &env);
             println!("env {:?}", env);
         }
         Err(err) => {
             println!("{}", err);
             println!("env {:?}", env);
         }
-
     }
 
     REPLState::Running

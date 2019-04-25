@@ -2,11 +2,12 @@ use crate::types::*;
 use crate::types::MalToken::*;
 use crate::types::AST::*;
 use crate::types::MalType::*;
+use crate::env::Env;
 
-pub fn pr_str(ast: &AST) {
+pub fn pr_str(ast: &AST, env: &Env) {
     match ast {
         Atom(atom) => {
-            print_atom(atom)
+            print_atom(atom, env)
         }
         List(list) => {
             print!("(");
@@ -16,7 +17,7 @@ pub fn pr_str(ast: &AST) {
                     print!(" ");
                 }
                 open = false;
-                pr_str(x)
+                pr_str(x, env)
             }
             print!(")");
         }
@@ -28,7 +29,7 @@ pub fn pr_str(ast: &AST) {
                     print!(" ");
                 }
                 open = false;
-                pr_str(x)
+                pr_str(x, env)
             }
             print!("]");
         }
@@ -40,15 +41,19 @@ pub fn pr_str(ast: &AST) {
                     print!(" ");
                 }
                 open = false;
-                pr_str(x)
+                pr_str(x, env)
             }
             print!("}}");
         }
     }
 }
 
-fn print_atom(atom: &MalType) {
-    match atom {
+fn print_atom(atom: &MalType, env: &Env) {
+    let mut to_print = atom;
+    if let Some(value) = env.find(atom) {
+        to_print = value;
+    }
+    match to_print {
         Something(s) => {
             print!("{}", s);
         }
